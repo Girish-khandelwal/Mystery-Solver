@@ -50,6 +50,6 @@ export const ACHIEVEMENTS = [
   {
     id: "legend",
     name: "Legendary detective",
-    description: "Solve all 100 cases.",
+    description: "Solve all 150 cases.",
   },
 ];

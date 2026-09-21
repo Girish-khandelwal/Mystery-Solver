@@ -31,10 +31,24 @@ export default function Home() {
           <span>EST. 1998 · OPEN INVESTIGATIONS</span>
         </div>
       </div>
+      <div className="home-level-choice">
+        <span>
+          <strong>50 new Easy cases.</strong> Pick any playable level and
+          investigate at your own pace.
+        </span>
+        <div>
+          <Link className="button" href="/archive">
+            Choose a level
+          </Link>
+          <Link className="button primary" href="/archive?difficulty=Easy">
+            Browse Easy cases <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
       <section className="hero">
         <img
           src={featured.coverImage}
-          alt="An atmospheric clockmaker’s workshop filled with antique clocks"
+          alt={`${featured.title} case illustration`}
         />
         <div className="hero-shade" />
         <div className="hero-content">
@@ -83,7 +97,7 @@ export default function Home() {
             icon: FolderOpen,
             label: "CASES SOLVED",
             value: String(profile?.solved ?? 0).padStart(2, "0"),
-            detail: "of 100 case files",
+            detail: `of ${catalog.length} case files`,
           },
           {
             icon: Target,

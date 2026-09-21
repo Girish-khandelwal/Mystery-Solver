@@ -6,7 +6,7 @@ A responsive, noir-inspired mystery investigation game. Enter scenes, secure and
 
 ## Content status
 
-**100 visible archive entries. 11 playable investigations. 89 explicitly labeled story outlines.** The archive never offers an unfinished case as playable.
+**150 visible archive entries. 150 playable investigations, including 50 Easy levels.** The archive never offers an unfinished case as playable.
 
 | Case    | Title                       | Authored content                                                                                                             |
 | ------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -21,13 +21,19 @@ A responsive, noir-inspired mystery investigation game. Enter scenes, secure and
 | 009     | The Broken Alibi            | Insurance fraud; preparation versus ignition                                                                                 |
 | 010     | The Black Envelope          | Blackmail; revision history and printing custody                                                                             |
 | 011     | The Silent Witness          | Sabotage; sensor limitations and mechanical evidence                                                                         |
-| 012–100 | See `data/catalog.ts`       | Distinct premises, settings, and reasoning outlines; not playable                                                            |
+| 012–100 | See `data/catalog.ts`       | Compact standalone report-tampering investigations with evidence, interviews, and solutions                                                            |
 
 Cases 002–011 each have 3 suspects, 3 locations including a gated follow-up search, 8 exhibits, 6 interview questions, 3 deductions, a contradiction, timeline reconstruction, and a final theory. They share a content compiler and interaction grammar, with independently authored mechanisms and clues. They are shorter than Case 001.
 
-The intended archive progression is Hard (001–015), Very Hard (016–040), Expert (041–070), Master Detective (071–090), and Legendary (091–100). Only the initial Hard cases are authored today. Estimated durations are editorial estimates, not measured playtest results.
+New levels **101–150 are Easy**: each has three suspects, three locations, six exhibits, six interview questions, three deductions, one contradiction, a three-event timeline, and a complete final theory. They reuse a compact investigation structure with distinct authored scenarios.
+
+**Every playable case can be selected immediately**, in any order, regardless of XP, rank, or previous completion. Use the archive’s level selector, the Easy difficulty filter, or the homepage’s Easy cases shortcut. Existing case IDs and saves are preserved; unfinished outlines remain unavailable.
+
+The original archive difficulty grouping is Hard (001–015), Very Hard (016–040), Expert (041–070), Master Detective (071–090), and Legendary (091–100). The first eleven Hard cases and all fifty new Easy cases are authored today. Estimated durations are editorial estimates, not measured playtest results.
 
 ## Screenshots
+
+![Easy cases and unrestricted level selection](docs/screenshots/easy-levels.png)
 
 ![CASEFILE headquarters](docs/screenshots/headquarters.png)
 
@@ -37,7 +43,7 @@ The UI uses local, original SVG placeholder artwork in `public/cases/`; no remot
 
 ## Features
 
-- Five initial cases; each solved case unlocks two more authored cases.
+- Unrestricted selection of all 150 playable cases, with a direct level picker and Easy filter.
 - Scene hotspots with keyboard-accessible equivalents and evidence-gated locations.
 - Initial observations separated from examiner analysis; analysis unlocks questions and deductions.
 - Suspect interviews, witness accounts, explainable red herrings, and statement cards.
@@ -77,7 +83,7 @@ DATABASE_URL="file:./dev.db"
 
 Prisma resolves this relative to `prisma/schema.prisma`. The database is `prisma/dev.db` and is ignored by Git. No external services, API keys, paid models, or network connections are needed during gameplay.
 
-For an existing checkout, `npm run db:setup` applies checked-in migrations and reruns the idempotent seed. The seed writes 100 case metadata records, ten ranks, eight achievement definitions, and an optional zero-XP Detective record. Authored content remains in version-controlled TypeScript.
+For an existing checkout, `npm run db:setup` applies checked-in migrations and reruns the idempotent seed. The seed writes 150 case metadata records, ten ranks, eight achievement definitions, and an optional zero-XP Detective record. Authored content remains in version-controlled TypeScript.
 
 ## Local profiles
 
@@ -90,7 +96,7 @@ Opening the application creates a browser-specific **Detective** profile with ze
 ```text
 app/
   page.tsx                 Headquarters and resume entry
-  archive/                 Searchable 100-case archive
+  archive/                 Searchable 150-case archive and level picker
   case/[id]/               Investigation route
   profile/ achievements/ settings/
   api/profile/             Local profile and statistics
@@ -112,11 +118,13 @@ lib/
   db.ts                    Reused Prisma client
   constants.ts             Ranks and achievements
  data/
-  catalog.ts               Public metadata and 89 outlines
+  catalog.ts               Public metadata for all 150 playable cases
+  easy-catalog.ts          Spoiler-free metadata for levels 101–150
   server-cases.ts          Server-only registry boundary
   cases/clockmaker.ts      Authored Case 001
   cases/solutions.ts       Private Case 001 solution
-  cases/episodes.ts        Ten independently authored case scenarios/compiler
+  cases/episodes.ts        Ten independently authored Hard case scenarios/compiler
+  cases/easy.ts            Fifty authored Easy scenarios and private solution compiler
  types/game.ts             Case, evidence, progress, and result interfaces
  prisma/schema.prisma      Database models and constraints
  prisma/migrations/        Checked-in initial migration
@@ -128,7 +136,7 @@ lib/
 
 ### Case engine and data boundary
 
-The client sends **actions**, not score or progress snapshots. The API validates the request with Zod, checks the cookie, unlock requirements, and current version, then runs the reducer against the private solution. A transaction persists the new state and normalized discoveries. Version conflicts return HTTP 409 and reload the current save rather than overwriting it.
+The client sends **actions**, not score or progress snapshots. The API validates the request with Zod, checks the cookie, investigation prerequisites, and current version (not rank-based case locks), then runs the reducer against the private solution. A transaction persists the new state and normalized discoveries. Version conflicts return HTTP 409 and reload the current save rather than overwriting it.
 
 The player-data projection withholds unexamined analysis and unasked answers. The browser never receives `SecretSolution`, answer maps, hidden contradiction pairs, or private reconstruction prose before solving. Final theory choices are naturally visible, but no correct-answer flags are sent. Successful submission unseals the complete solution. Private source files must never be imported into client components; use the server-only registry.
 
@@ -136,7 +144,7 @@ The player-data projection withholds unexamined analysis and unasked answers. Th
 
 `User` owns `PlayerProfile`, `Settings`, `CaseProgress`, and `PlayerAchievement`. `CaseProgress` references `Case` and owns `EvidenceDiscovery`, `LocationProgress`, `InterrogationProgress`, `DeductionProgress`, `PlayerNote`, and one `CaseResult`. `Achievement` and `DetectiveRank` are definitions. Foreign keys, cascading progress-child cleanup, compound uniqueness, and profile/time indexes prevent duplicate saves and awards.
 
-The versioned `CaseProgress.state` is the authoritative aggregate, serialized as text for database portability. Normalized rows are derived in the same transaction. XP and successful results are awarded once. Resetting a case removes its score contribution; reset operations currently clear achievement awards, which can be earned again.
+The versioned `CaseProgress.state` is the authoritative aggregate, serialized as text for database portability. Only changed normalized rows are written in the same transaction, keeping save work constant as the investigation grows. Transactions allow extra time for hosted-database round trips. XP and successful results are awarded once. Resetting a case removes its score contribution; reset operations currently clear achievement awards, which can be earned again.
 
 ### Scoring
 
@@ -157,6 +165,8 @@ Case 001 is the expanded authoring example. `buildEpisode` is a compact content 
 
 ## Tests and build
 
+Development output uses `.next-dev`, separate from production `.next`, so a live development server cannot overwrite production chunks. An additional preview can set `CASEFILE_DIST_DIR=.next-preview`.
+
 ```bash
 npm test
 npm run typecheck
@@ -164,7 +174,7 @@ npm run build
 npm start
 ```
 
-The unit/content suite checks all eleven cases can reach a perfect solution, gates cannot be bypassed, unseen analysis is withheld, save roundtrips work, and private solution prose is absent from built browser chunks. Run it **after a build** to check current client bundles.
+The unit/content suite checks all 150 playable cases can reach a perfect solution, gates cannot be bypassed, unseen analysis is withheld, save roundtrips work, and private solution prose is absent from built browser chunks. Run it **after a build** to check current client bundles.
 
 With the local server running:
 
@@ -174,7 +184,7 @@ npm run test:integration
 TEST_BASE_URL=http://localhost:3002 npm run test:integration
 ```
 
-The integration script uses a new isolated cookie jar. It tests the entire Clockmaker solution, a wrong theory, score penalties, save/resume, version conflicts, achievements, rank advancement, case unlocks, preferences, and destructive-reset confirmation. It resets only its own test profile’s progress. Automated reachability does not establish editorial difficulty or substitute for human mystery playtesting.
+The integration script uses a new isolated cookie jar. It tests the entire Clockmaker solution, a wrong theory, score penalties, save/resume, version conflicts, achievements, rank advancement, unrestricted level selection, Easy-case completion, preferences, and destructive-reset confirmation. It resets only its own test profile’s progress. Automated reachability does not establish editorial difficulty or substitute for human mystery playtesting.
 
 ## Deployment
 
@@ -192,7 +202,7 @@ The model uses portable scalar fields and avoids SQLite-specific application que
 
 ## Limitations and next improvements
 
-- 89 case outlines await full evidence, suspect, and solution authoring; later difficulty tiers are not playable yet.
+- Cases 012–100 are compact report-tampering investigations built around the original archive mechanisms, using a shared investigation structure. All 150 cases are selectable without progression locks.
 - Cases 002–011 are compact authored investigations; expand their dialogue branches and multi-step proof chains through human playtesting.
 - Local SVG artwork and shared placeholder portraits are intentional development assets. Replace them with case-specific photography/illustration.
 - The board uses selectable cards and persistent linked pairs, not freely draggable cards with movable strings.

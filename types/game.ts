@@ -1,5 +1,5 @@
 export type Difficulty =
-  "Hard" | "Very Hard" | "Expert" | "Master Detective" | "Legendary";
+  "Easy" | "Hard" | "Very Hard" | "Expert" | "Master Detective" | "Legendary";
 export type EvidenceType =
   "Physical" | "Digital" | "Documents" | "Forensic" | "Witness";
 export interface CaseMeta {

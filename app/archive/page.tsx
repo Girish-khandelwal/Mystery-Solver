@@ -1,21 +1,25 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Search, SlidersHorizontal, FolderOpen } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, FolderOpen } from "lucide-react";
 import { catalog } from "@/data/catalog";
 import { CaseCard } from "@/components/CaseCard";
 import { useDetective } from "@/components/Provider";
-import { Modal } from "@/components/ui/Modal";
 export default function Archive() {
+  const router = useRouter();
+  const playable = catalog.filter((c) => c.contentStatus === "playable");
   const [query, setQuery] = useState("");
   const [difficulty, setDifficulty] = useState("All difficulties");
   const [category, setCategory] = useState("All categories");
   const [status, setStatus] = useState("All cases");
-  const [selected, setSelected] = useState<string | null>(null);
   const { profile } = useDetective();
   useEffect(() => {
-    setSelected(new URLSearchParams(location.search).get("case"));
+    const params = new URLSearchParams(location.search);
+    if (params.get("difficulty") === "Easy") {
+      setDifficulty("Easy");
+      setStatus("Playable");
+    }
   }, []);
-  const chosen = catalog.find((c) => c.id === selected);
   const filtered = catalog.filter((c) => {
     const p = profile?.progress.find((p) => p.caseId === c.id);
     return (
@@ -26,7 +30,6 @@ export default function Archive() {
       (category === "All categories" || c.category === category) &&
       (status === "All cases" ||
         (status === "Playable" && c.contentStatus === "playable") ||
-        (status === "In development" && c.contentStatus === "outline") ||
         (status === "Solved" && p?.status === "solved") ||
         (status === "In progress" && p?.status === "active") ||
         (status === "Unsolved" && p?.status !== "solved"))
@@ -36,12 +39,56 @@ export default function Archive() {
     <div className="page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">100 FILES. COUNTLESS SECRETS.</p>
+          <p className="eyebrow">{catalog.length} FILES. COUNTLESS SECRETS.</p>
           <h1>The case archive</h1>
-          <p>Choose a mystery. Leave no question unanswered.</p>
+          <p>
+            Choose any of the 150 levels, in any order. No rank or previous
+            completion required.
+          </p>
         </div>
-        <span className="tag">11 PLAYABLE · 89 IN DEVELOPMENT</span>
+        <span className="tag">{playable.length} LEVELS · ALL UNLOCKED</span>
       </div>
+      <section className="level-selector" aria-label="Level selection">
+        <div>
+          <p className="eyebrow">START ANYWHERE</p>
+          <h2>Choose your next level</h2>
+          <p>
+            All 150 cases are open. Try the 50 Easy cases for a shorter
+            investigation.
+          </p>
+        </div>
+        <label htmlFor="level-picker">
+          Jump directly to a level
+          <select
+            id="level-picker"
+            defaultValue=""
+            onChange={(e) => router.push(`/case/${e.target.value}`)}
+          >
+            <option value="" disabled>
+              Select a level…
+            </option>
+            {catalog.map((c) => (
+              <option key={c.id} value={c.id}>
+                #{c.id} · {c.title} ·{" "}
+                {c.contentStatus === "playable"
+                  ? c.difficulty
+                  : "In development"}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="button primary"
+          onClick={() => {
+            setDifficulty("Easy");
+            setStatus("Playable");
+            setCategory("All categories");
+            setQuery("");
+          }}
+        >
+          Browse 50 Easy cases
+        </button>
+      </section>
       <div className="archive-toolbar">
         <label className="search-field">
           <Search size={18} />
@@ -59,6 +106,7 @@ export default function Archive() {
         >
           {[
             "All difficulties",
+            "Easy",
             "Hard",
             "Very Hard",
             "Expert",
@@ -81,40 +129,22 @@ export default function Archive() {
         </select>
       </div>
       <div className="filter-tabs">
-        {[
-          "All cases",
-          "Playable",
-          "In progress",
-          "Solved",
-          "Unsolved",
-          "In development",
-        ].map((x) => (
-          <button
-            key={x}
-            className={status === x ? "selected" : ""}
-            onClick={() => setStatus(x)}
-          >
-            {x}
-          </button>
-        ))}
+        {["All cases", "Playable", "In progress", "Solved", "Unsolved"].map(
+          (x) => (
+            <button
+              key={x}
+              className={status === x ? "selected" : ""}
+              onClick={() => setStatus(x)}
+            >
+              {x}
+            </button>
+          ),
+        )}
         <span>{filtered.length} CASE FILES</span>
       </div>
       <div className="case-grid">
         {filtered.map((item) => (
-          <div
-            key={item.id}
-            onClickCapture={(e) => {
-              if (
-                item.contentStatus === "outline" ||
-                item.caseNumber > 5 + (profile?.solved ?? 0) * 2
-              ) {
-                e.preventDefault();
-                setSelected(item.id);
-              }
-            }}
-          >
-            <CaseCard item={item} />
-          </div>
+          <CaseCard key={item.id} item={item} />
         ))}
       </div>
       {!filtered.length && (
@@ -123,19 +153,6 @@ export default function Archive() {
           <h3>No matching files</h3>
           <p>Try a broader search or a different filter.</p>
         </div>
-      )}
-      {chosen && (
-        <Modal title={chosen.title} onClose={() => setSelected(null)}>
-          <p className="eyebrow">
-            CASE #{chosen.id} · {chosen.difficulty}
-          </p>
-          <p>{chosen.introduction}</p>
-          <div className="callout">
-            {chosen.contentStatus === "outline"
-              ? "This is a planned investigation. Its story outline is in the archive, but evidence and interviews are still being authored. It cannot be played yet."
-              : "Solve an available investigation to open more case files. Each solved case unlocks two more, up to the available authored content."}
-          </div>
-        </Modal>
       )}
     </div>
   );

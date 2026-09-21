@@ -293,7 +293,7 @@ export function TimelinePanel({ data, act, busy }: PanelProps) {
     <>
       <div className="section-heading">
         <div>
-          <h2>Reconstruct the night.</h2>
+          <h2>Reconstruct the events.</h2>
           <p>
             Order the events from earliest to latest. Check what each timestamp
             actually records.

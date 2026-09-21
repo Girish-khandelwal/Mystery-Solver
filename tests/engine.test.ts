@@ -1,3 +1,5 @@
+import { archiveEpisodes } from "../data/cases/archive";
+import { easyEpisodes } from "../data/cases/easy";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -17,13 +19,26 @@ import type { Action } from "../lib/engine";
 const entries = [
   { case: clockmaker, solution: clockmakerSolution },
   ...additionalEpisodes,
+  ...archiveEpisodes,
+  ...easyEpisodes,
 ];
-test("100 unique catalog entries with honest authored status and assets", () => {
-  assert.equal(catalog.length, 100);
-  assert.equal(new Set(catalog.map((c) => c.id)).size, 100);
+test("150 unique catalog entries with honest authored status and assets", () => {
+  assert.equal(catalog.length, 150);
+  assert.equal(new Set(catalog.map((c) => c.id)).size, 150);
   assert.equal(
     catalog.filter((c) => c.contentStatus === "playable").length,
-    11,
+    150,
+  );
+  assert.equal(catalog.filter((c) => c.difficulty === "Easy").length, 50);
+  assert.deepEqual(
+    easyEpisodes.map((e) => e.case.id),
+    Array.from({ length: 50 }, (_, i) => String(101 + i)),
+  );
+  assert.ok(
+    easyEpisodes.every(
+      (e) =>
+        e.case.difficulty === "Easy" && e.case.contentStatus === "playable",
+    ),
   );
   for (const c of catalog) assert.ok(existsSync("public" + c.coverImage));
 });

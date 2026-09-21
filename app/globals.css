@@ -2412,3 +2412,95 @@ textarea::placeholder {
     margin-right: 8px;
   }
 }
+/* Level selection is independent of rank and previous case completion. */
+.level-selector {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  margin: 0 0 24px;
+}
+.level-selector > div {
+  flex: 1;
+  min-width: 220px;
+}
+.level-selector h2 {
+  font-size: 1.4rem;
+  margin: 8px 0;
+}
+.level-selector p:not(.eyebrow) {
+  font-size: 0.85rem;
+}
+.level-selector > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+  min-width: 240px;
+  max-width: 100%;
+}
+.level-selector select {
+  width: 100%;
+  max-width: 100%;
+}
+.home-level-choice {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 18px 22px;
+  margin-bottom: 22px;
+  border-radius: 4px;
+}
+.home-level-choice > span {
+  font-size: 0.85rem;
+  color: var(--muted);
+  flex: 1;
+  min-width: 230px;
+}
+.home-level-choice strong {
+  color: var(--gold);
+  font-weight: 500;
+}
+.home-level-choice > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .level-selector {
+    padding: 20px;
+    gap: 18px;
+  }
+  .level-selector > label {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .level-selector > div {
+    min-width: 0;
+  }
+  .level-selector > .button {
+    width: 100%;
+  }
+  .home-level-choice {
+    padding: 18px;
+  }
+  .home-level-choice > span {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .home-level-choice > div {
+    width: 100%;
+  }
+  .home-level-choice .button {
+    flex: 1;
+    font-size: 0.73rem;
+  }
+}

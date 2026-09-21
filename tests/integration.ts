@@ -1,3 +1,5 @@
+import { catalog } from "../data/catalog";
+import { easyEpisodes } from "../data/cases/easy";
 // Uses a new isolated cookie jar, never the browser user's profile.
 import assert from "node:assert/strict";
 import { clockmaker } from "../data/cases/clockmaker";
@@ -21,8 +23,24 @@ async function main() {
   const p = await request("/api/profile");
   assert.equal(p.status, 200);
   assert.equal(p.data.solved, 0);
-  assert.equal((await request("/api/game/006")).status, 400);
-  assert.equal((await request("/api/game/012")).status, 400);
+  // A brand-new detective can select every authored case without rank/XP gates.
+  const openIds = catalog.map((c) => c.id);
+  for (let offset = 0; offset < openIds.length; offset += 4) {
+    await Promise.all(
+      openIds.slice(offset, offset + 4).map(async (id) => {
+        const opened = await request(`/api/game/${id}`);
+        assert.equal(
+          opened.status,
+          200,
+          `Level ${id} must be freely selectable`,
+        );
+      }),
+    );
+  }
+  console.log(
+    "Verified unrestricted selection of 150 cases with zero previous completions.",
+  );
+  assert.equal((await request("/api/game/151")).status, 400);
   let game = (await request("/api/game/001")).data as GamePayload;
   assert.equal(game.state.discovered.length, 0);
   const run = async (action: Action) => {
@@ -129,6 +147,60 @@ async function main() {
     400,
   );
   assert.equal((await request("/api/profile")).data.xp, 925);
+  console.log("Clockmaker solve, persistence, scoring and ranking passed.");
+  // Solve a representative new Easy level through the same database-backed API.
+  const easy = easyEpisodes[49];
+  let easyGame = (await request(`/api/game/${easy.case.id}`))
+    .data as GamePayload;
+  const easyRun = async (action: Action) => {
+    const r = await request(`/api/game/${easy.case.id}`, "POST", {
+      version: easyGame.version,
+      action,
+    });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    easyGame = r.data;
+  };
+  for (let pass = 0; pass < 2; pass++) {
+    for (const loc of easy.case.locations) {
+      if (!locationOpen(easy.case, easyGame.state, loc.id)) continue;
+      if (!easyGame.state.visited.includes(loc.id))
+        await easyRun({ type: "visit", id: loc.id });
+      for (const hotspot of loc.hotspots) {
+        if (!easyGame.state.discovered.includes(hotspot.evidenceId))
+          await easyRun({ type: "discover", id: hotspot.evidenceId });
+        if (!easyGame.state.analyzed.includes(hotspot.evidenceId))
+          await easyRun({ type: "analyze", id: hotspot.evidenceId });
+      }
+    }
+  }
+  for (const person of easy.case.suspects)
+    for (const q of person.questions)
+      await easyRun({ type: "interview", id: q.id });
+  for (const deduction of easy.case.deductions)
+    await easyRun({
+      type: "deduce",
+      id: deduction.id,
+      answer: easy.solution.deductions[deduction.id],
+    });
+  for (const contradiction of easy.solution.contradictions)
+    await easyRun({
+      type: "connect",
+      pair: contradiction.pair,
+      contradiction: true,
+    });
+  await easyRun({ type: "timeline", order: easy.solution.timelineOrder });
+  await easyRun({
+    type: "theory",
+    answers: easy.solution.answers,
+    proof: easy.solution.proof,
+  });
+  assert.equal(easyGame.state.solved, true);
+  assert.equal(easyGame.state.report?.score, 1000);
+  assert.equal((await request("/api/profile")).data.solved, 2);
+  assert.equal((await request("/api/profile")).data.xp, 1925);
+  // Switching cases must not replace either saved investigation.
+  assert.equal((await request("/api/game/001")).data.state.report.score, 925);
+  assert.equal((await request("/api/game/150")).data.state.report.score, 1000);
   assert.equal(
     (await request("/api/settings", "DELETE", { confirmation: "wrong" }))
       .status,
@@ -152,7 +224,7 @@ async function main() {
   assert.equal((await request("/api/profile")).data.xp, 0);
   assert.equal((await request("/api/profile")).data.attempted, 0);
   console.log(
-    "Integration passed: isolated session, gates, persistence, conflicts, every clockmaker exhibit, interviews, deductions, board contradictions, chronology, wrong/correct theory, score, rank, achievements, next case, settings, reset.",
+    "Integration passed: isolated session, gates, persistence, conflicts, every clockmaker exhibit, interviews, deductions, board contradictions, chronology, wrong/correct theory, score, rank, achievements, all 150 levels selectable without prior completion, full Easy-case solve, independent saves, settings, reset.",
   );
 }
 main().catch((e) => {
