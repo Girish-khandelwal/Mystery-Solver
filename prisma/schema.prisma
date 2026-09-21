@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(cuid())
+  username String
+  sessionToken String @unique
+  createdAt DateTime @default(now())
+  profile PlayerProfile?
+  settings Settings?
+  progress CaseProgress[]
+  achievements PlayerAchievement[]
+}
+model PlayerProfile {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xp Int @default(0)
+}
+model DetectiveRank {
+  name String @id
+  minimumXp Int @unique
+}
+model Case {
+  id String @id
+  caseNumber Int @unique
+  title String
+  category String
+  difficulty String
+  contentStatus String
+  progress CaseProgress[]
+}
+model CaseProgress {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caseId String
+  case Case @relation(fields: [caseId], references: [id])
+  state String @default("{}")
+  version Int @default(0)
+  status String @default("active")
+  updatedAt DateTime @updatedAt
+  startedAt DateTime @default(now())
+  evidence EvidenceDiscovery[]
+  locations LocationProgress[]
+  interviews InterrogationProgress[]
+  deductions DeductionProgress[]
+  notes PlayerNote[]
+  result CaseResult?
+  @@unique([userId, caseId])
+  @@index([userId, updatedAt])
+}
+model EvidenceDiscovery {
+  id String @id @default(cuid())
+  progressId String
+  progress CaseProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  evidenceId String
+  analyzed Boolean @default(false)
+  @@unique([progressId, evidenceId])
+}
+model LocationProgress {
+  id String @id @default(cuid())
+  progressId String
+  progress CaseProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  locationId String
+  @@unique([progressId, locationId])
+}
+model InterrogationProgress {
+  id String @id @default(cuid())
+  progressId String
+  progress CaseProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  questionId String
+  @@unique([progressId, questionId])
+}
+model DeductionProgress {
+  id String @id @default(cuid())
+  progressId String
+  progress CaseProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  deductionId String
+  @@unique([progressId, deductionId])
+}
+model PlayerNote {
+  id String @id @default(cuid())
+  progressId String
+  progress CaseProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  text String
+  @@index([progressId])
+}
+model Achievement {
+  id String @id
+  name String
+  description String
+  players PlayerAchievement[]
+}
+model PlayerAchievement {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+  earnedAt DateTime @default(now())
+  @@unique([userId, achievementId])
+}
+model CaseResult {
+  id String @id @default(cuid())
+  progressId String @unique
+  progress CaseProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  score Int
+  accuracy Int
+  report String
+  completedAt DateTime @default(now())
+}
+model Settings {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  muted Boolean @default(true)
+  soundVolume Int @default(50)
+  musicVolume Int @default(25)
+  textSize String @default("normal")
+  reducedMotion Boolean @default(false)
+  tutorialDone Boolean @default(false)
+}

@@ -1,0 +1,44 @@
+{
+  "name": "casefile",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "db:seed": "node --import tsx prisma/seed.ts",
+    "test:integration": "node --import tsx tests/integration.ts",
+    "postinstall": "node scripts/prepare-local.mjs && prisma generate",
+    "db:setup": "node scripts/prepare-local.mjs && prisma migrate deploy && npm run db:seed",
+    "format": "prettier --write \"{app,components,data,lib,types,tests,scripts,prisma}/**/*.{ts,tsx,css,mjs}\" \"*.{json,ts,mjs,md}\""
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "lucide-react": "^0.468.0",
+    "next": "^15.5.12",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prettier": "^3.9.8",
+    "prisma": "^6.19.0",
+    "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "prisma": {
+    "seed": "node --import tsx prisma/seed.ts"
+  },
+  "overrides": {
+    "postcss": "^8.5.23",
+    "deepmerge-ts": "^8.0.0"
+  }
+}
