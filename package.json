@@ -12,7 +12,13 @@
     "test:integration": "node --import tsx tests/integration.ts",
     "postinstall": "node scripts/prepare-local.mjs && prisma generate",
     "db:setup": "node scripts/prepare-local.mjs && prisma migrate deploy && npm run db:seed",
-    "format": "prettier --write \"{app,components,data,lib,types,tests,scripts,prisma}/**/*.{ts,tsx,css,mjs}\" \"*.{json,ts,mjs,md}\""
+    "format": "prettier --write \"{app,components,data,lib,types,tests,scripts,prisma}/**/*.{ts,tsx,css,mjs}\" \"*.{json,ts,mjs,md}\"",
+    "mobile:install": "npm --prefix mobile ci",
+    "mobile:test": "npm --prefix mobile test",
+    "mobile:build": "npm --prefix mobile run build",
+    "mobile:sync": "npm --prefix mobile run sync",
+    "mobile:open": "npm --prefix mobile run open",
+    "mobile:apk": "npm --prefix mobile run apk"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

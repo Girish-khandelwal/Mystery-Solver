@@ -9,3 +9,15 @@ playwright-report
 test-results
 
 .next-*
+
+# Offline Android output and local signing material
+mobile/dist/
+mobile/android/.gradle/
+mobile/android/**/build/
+mobile/android/local.properties
+mobile/android/app/src/main/assets/public/
+mobile/android/app/src/main/assets/capacitor.config.json
+mobile/android/app/src/main/assets/capacitor.plugins.json
+mobile/android/capacitor-cordova-android-plugins/
+*.keystore
+*.jks

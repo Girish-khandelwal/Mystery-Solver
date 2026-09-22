@@ -1,4 +1,5 @@
 "use client";
+import { gameRequest } from "@/lib/client";
 import { useState } from "react";
 import { useDetective } from "@/components/Provider";
 import { Modal } from "@/components/ui/Modal";
@@ -10,7 +11,7 @@ export default function Settings() {
   const save = async (next: typeof settings) => {
     setBusy(true);
     try {
-      const r = await fetch("/api/settings", {
+      const r = await gameRequest("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(next),
@@ -163,7 +164,7 @@ export default function Settings() {
               onClick={async () => {
                 setBusy(true);
                 try {
-                  const r = await fetch("/api/settings", {
+                  const r = await gameRequest("/api/settings", {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

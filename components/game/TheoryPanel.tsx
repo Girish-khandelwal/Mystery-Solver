@@ -1,4 +1,5 @@
 "use client";
+import { isOfflineApp } from "@/lib/client";
 import { useState } from "react";
 import Link from "next/link";
 import { Scale, CheckCircle2, ArrowRight } from "lucide-react";
@@ -112,8 +113,9 @@ export function TheoryPanel({ data, act, busy }: PanelProps) {
           Unsupported deduction, contradiction or chronology: −15
         </p>
         <p className="muted">
-          Your score is calculated on the server. Time is tracked for your
-          profile, but never penalizes careful reading.
+          Your score is calculated{" "}
+          {isOfflineApp ? "on this device" : "on the server"}. Time is tracked
+          for your profile, but never penalizes careful reading.
         </p>
       </aside>
     </div>

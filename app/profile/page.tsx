@@ -1,4 +1,5 @@
 "use client";
+import { gameRequest, isOfflineApp } from "@/lib/client";
 import { useState } from "react";
 import Link from "next/link";
 import { ShieldCheck, ArrowRight } from "lucide-react";
@@ -90,13 +91,16 @@ export default function Profile() {
         <section className="panel">
           <h3>Your local identity</h3>
           <p>
-            This browser has its own detective profile. A name is a display
-            label, not a password or an account recovery method.
+            {isOfflineApp
+              ? "This app stores your detective profile on this device. Uninstalling or clearing app data removes it."
+              : "This browser has its own detective profile."}{" "}
+            A name is a display label, not a password or an account recovery
+            method.
           </p>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              const r = await fetch("/api/profile", {
+              const r = await gameRequest("/api/profile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username: name }),

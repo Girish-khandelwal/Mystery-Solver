@@ -211,3 +211,7 @@ The model uses portable scalar fields and avoids SQLite-specific application que
 - Resetting any case clears achievement awards; a future implementation should recalculate awards from retained results.
 - Add a versioned content migration strategy before modifying IDs referenced by existing player saves.
 - Add hosted-database deployment validation, rate limiting, broader assistive-technology testing, and independent editorial playtests before calling this production-ready.
+
+## Offline Android app
+
+A separate fully offline Android build is available in [`mobile/README.md`](mobile/README.md). It bundles all 150 cases and stores progress on the device. Use `npm run mobile:sync` to prepare the Android project, then generate an APK with Android Studio or the manually triggered **Build offline Android APK** GitHub Actions workflow. The mobile build needs no Vercel/Supabase credentials. Website build/deployment commands are unchanged.

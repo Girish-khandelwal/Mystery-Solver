@@ -1,4 +1,5 @@
 "use client";
+import { gameRequest, isOfflineApp } from "@/lib/client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   ArrowLeft,
@@ -62,7 +63,7 @@ export default function Investigation({ id }: { id: string }) {
   const stateRef = useRef<GamePayload | null>(null);
   const load = useCallback(async () => {
     try {
-      const r = await fetch(`/api/game/${id}`);
+      const r = await gameRequest(`/api/game/${id}`);
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       setData(d);
@@ -90,7 +91,7 @@ export default function Investigation({ id }: { id: string }) {
       lock.current = true;
       setBusy(true);
       try {
-        const r = await fetch(`/api/game/${id}`, {
+        const r = await gameRequest(`/api/game/${id}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ version: stateRef.current.version, action }),
@@ -186,7 +187,9 @@ export default function Investigation({ id }: { id: string }) {
                 ? "Unsynced action"
                 : error
                   ? "Save needs attention"
-                  : "Saved to database"}
+                  : isOfflineApp
+                    ? "Saved on this device"
+                    : "Saved to database"}
           </span>
           <button
             className="icon-button"
@@ -223,7 +226,9 @@ export default function Investigation({ id }: { id: string }) {
       )}
       {pending && (
         <div className="callout">
-          An action could not reach the database.{" "}
+          {isOfflineApp
+            ? "An action could not be saved on this device."
+            : "An action could not reach the database."}{" "}
           <button className="button" onClick={() => act(pending)}>
             Retry unsynced action
           </button>
@@ -354,7 +359,7 @@ export default function Investigation({ id }: { id: string }) {
             <button
               className="button primary"
               onClick={async () => {
-                const r = await fetch("/api/settings", {
+                const r = await gameRequest("/api/settings", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ tutorialDone: true }),

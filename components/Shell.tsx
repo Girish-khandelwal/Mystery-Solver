@@ -1,4 +1,5 @@
 "use client";
+import { isOfflineApp } from "@/lib/client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -108,7 +109,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
             >
               <Search size={18} />
             </Link>
-            <span className="clearance">LOCAL DETECTIVE PROFILE</span>
+            <span className="clearance">
+              {isOfflineApp
+                ? "OFFLINE · ON THIS DEVICE"
+                : "LOCAL DETECTIVE PROFILE"}
+            </span>
             <Link
               href="/profile"
               className="avatar small"
@@ -123,7 +128,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {error}
           </div>
         )}
-        <main id="main-content">{children}</main>
+        <main id="main-content" tabIndex={-1}>
+          {children}
+        </main>
         <footer className="page-footer">
           <span>CASEFILE BUREAU · FICTIONAL CASES. REAL DEDUCTION.</span>
           <span>INVESTIGATE. DEDUCE. SOLVE.</span>

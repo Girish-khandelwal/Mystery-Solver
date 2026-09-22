@@ -1,12 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, FolderOpen } from "lucide-react";
 import { catalog } from "@/data/catalog";
 import { CaseCard } from "@/components/CaseCard";
 import { useDetective } from "@/components/Provider";
-export default function Archive() {
+function ArchiveContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const playable = catalog.filter((c) => c.contentStatus === "playable");
   const [query, setQuery] = useState("");
   const [difficulty, setDifficulty] = useState("All difficulties");
@@ -14,12 +15,12 @@ export default function Archive() {
   const [status, setStatus] = useState("All cases");
   const { profile } = useDetective();
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params = searchParams;
     if (params.get("difficulty") === "Easy") {
       setDifficulty("Easy");
       setStatus("Playable");
     }
-  }, []);
+  }, [searchParams]);
   const filtered = catalog.filter((c) => {
     const p = profile?.progress.find((p) => p.caseId === c.id);
     return (
@@ -155,5 +156,13 @@ export default function Archive() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Archive() {
+  return (
+    <Suspense fallback={<div className="page">Opening archive…</div>}>
+      <ArchiveContent />
+    </Suspense>
   );
 }

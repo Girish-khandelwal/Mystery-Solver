@@ -1,4 +1,5 @@
 "use client";
+import { gameRequest, isOfflineApp } from "@/lib/client";
 import {
   createContext,
   useContext,
@@ -52,7 +53,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
   const [current, setCurrentState] = useState<string | null>(null);
   const refresh = useCallback(async () => {
     try {
-      const response = await fetch("/api/profile");
+      const response = await gameRequest("/api/profile");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setProfile(data);
@@ -67,12 +68,18 @@ export function Provider({ children }: { children: React.ReactNode }) {
   }, []);
   useEffect(() => {
     refresh().then(() =>
-      fetch("/api/settings")
+      gameRequest("/api/settings")
         .then((r) => r.json())
         .then((s) => {
           if (!s.error) setSettings(s);
         })
-        .catch(() => setError("Preferences could not be loaded. Reconnect and reload to try again.")),
+        .catch(() =>
+          setError(
+            isOfflineApp
+              ? "Preferences could not be loaded from this device. Restart the app to try again."
+              : "Preferences could not be loaded. Reconnect and reload to try again.",
+          ),
+        ),
     );
     try {
       setCurrentState(localStorage.getItem("casefile-current"));
