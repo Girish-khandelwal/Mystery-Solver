@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { IDBFactory } from "fake-indexeddb";
-import { createLocalDatabase, LocalError } from "../src/store";
+import {
+  createLocalDatabase,
+  LocalError,
+  freshSave,
+  dispatch,
+} from "../src/store";
 import { offlineCases } from "../src/cases";
 import { catalog } from "../../data/catalog";
 import { hasRequirements, locationOpen, type Action } from "../../lib/engine";
@@ -9,6 +14,10 @@ import type { GamePayload, ProfileData } from "../../types/game";
 const factory = new IDBFactory();
 test("all 150 cases solve and persist locally without a server", async () => {
   const db = createLocalDatabase("all-cases", factory);
+  // Exercise every action against storage with one case at a time. Keeping all
+  // completed files in every fake-IDB transaction creates quadratic clone work.
+  // Separately retain real solved states to verify cumulative rewards and saves.
+  const aggregate = freshSave();
   assert.equal(offlineCases.length, 150);
   assert.deepEqual(
     offlineCases.map((e) => e.case.id).sort(),
@@ -56,15 +65,53 @@ test("all 150 cases solve and persist locally without a server", async () => {
     for (const x of solution.contradictions)
       await act({ type: "connect", pair: x.pair, contradiction: true });
     await act({ type: "timeline", order: solution.timelineOrder });
-    await act({
+    const theory: Action = {
       type: "theory",
       answers: solution.answers,
       proof: solution.proof,
-    });
+    };
+    aggregate.cases[c.id] = {
+      state: structuredClone(game.state),
+      version: game.version,
+      updatedAt: new Date().toISOString(),
+    };
+    const combined = dispatch(aggregate, `/api/game/${c.id}`, "POST", {
+      version: game.version,
+      action: theory,
+    }) as GamePayload;
+    assert.equal(combined.state.report?.score, 1000);
+    await act(theory);
     assert.equal(game.state.report?.score, 1000, `Case ${c.id}`);
     assert.equal(game.state.solved, true, `Case ${c.id}`);
+    await db.close();
+    const check = createLocalDatabase("all-cases", factory);
+    assert.deepEqual(
+      ((await check.run(`/api/game/${c.id}`, "GET")) as GamePayload).state,
+      game.state,
+    );
+    await check.run("/api/settings", "DELETE", { confirmation: "RESET" });
+    await check.close();
   }
   await db.close();
+  // Seed the full-profile persistence fixture using actual solutions above.
+  // This is test-only storage access, never an application import endpoint.
+  await new Promise<void>((resolve, reject) => {
+    const request = factory.open("all-cases", 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const connection = request.result;
+      const tx = connection.transaction("player", "readwrite");
+      tx.objectStore("player").put(aggregate, "save");
+      tx.oncomplete = () => {
+        connection.close();
+        resolve();
+      };
+      tx.onabort = () => {
+        connection.close();
+        reject(tx.error);
+      };
+    };
+  });
   const reopened = createLocalDatabase("all-cases", factory);
   const p = (await reopened.run("/api/profile", "GET")) as ProfileData;
   assert.equal(p.solved, 150);

@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build && node scripts/verify-offline.mjs",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "node --max-old-space-size=512 --import tsx --test tests/*.test.ts",
     "sync": "npm run build && cap sync android && node scripts/verify-android.mjs",
     "open": "cap open android",
     "apk": "npm run sync && node scripts/build-apk.mjs",
